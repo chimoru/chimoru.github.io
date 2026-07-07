@@ -1,3 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0a0612" />
+<title>Chimoru — personal hub</title>
 <style>
   :root {
     --bg: #0a0612;
@@ -337,7 +344,14 @@
     .avatar { animation: none; }
     .card, .launch, .link-btn { transition: none; }
   }
+
+  @media (max-width: 560px) {
+    .scene { padding: 2.5rem 1rem 3.5rem; }
+    .section { margin-top: 3rem; }
+  }
 </style>
+</head>
+<body>
 
 <div class="crt-overlay"></div>
 <div class="vignette"></div>
@@ -444,3 +458,5 @@
     });
   })();
 </script>
+</body>
+</html>
