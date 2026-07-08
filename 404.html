@@ -70,11 +70,12 @@
   }
   .cursor {
     display: inline-block;
-    width: 0.14em;
-    height: 0.72em;
+    width: 0.5em;
+    height: calc(0.625em + 8px);
     background: var(--cyan);
     margin-left: 0.12em;
     vertical-align: baseline;
+    transform: translateY(8px);
     box-shadow: 0 0 12px var(--cyan);
     animation: blink 1s steps(1) infinite;
   }
