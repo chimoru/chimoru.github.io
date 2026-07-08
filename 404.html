@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0a0612" />
+<title>404 — Chimoru</title>
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+  :root {
+    --bg: #0a0612;
+    --bg-grid: #140d28;
+    --pink: #ff4dcb;
+    --violet: #8b6dff;
+    --cyan: #2ff3f3;
+    --lime: #a6ff3d;
+    --text: #ece7ff;
+    --muted: #9488c4;
+    --edge: #372a63;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+    color: var(--text);
+    font-family: "Courier New", ui-monospace, "Cascadia Code", monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem 1.25rem;
+    overflow-x: hidden;
+    -webkit-font-smoothing: none;
+  }
+  .crt-overlay {
+    position: fixed; inset: 0; z-index: 50; pointer-events: none;
+    background: repeating-linear-gradient(rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.22) 2px 4px);
+    mix-blend-mode: multiply;
+  }
+  .vignette {
+    position: fixed; inset: 0; z-index: 49; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%);
+  }
+  .screen { position: relative; z-index: 1; max-width: 640px; }
+  .eyebrow {
+    color: var(--cyan);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    font-size: 13px;
+    margin: 0 0 1.5rem;
+  }
+  .eyebrow::before { content: "// "; color: var(--pink); }
+  h1 {
+    font-size: clamp(4rem, 22vw, 8rem);
+    letter-spacing: 0.08em;
+    margin: 0;
+    color: #fff;
+    line-height: 1;
+    text-shadow:
+      4px 4px 0 var(--pink),
+      8px 8px 0 rgba(139, 109, 255, 0.6),
+      0 0 24px rgba(255, 77, 203, 0.4);
+  }
+  .cursor {
+    display: inline-block;
+    width: 0.14em;
+    height: 0.72em;
+    background: var(--cyan);
+    margin-left: 0.12em;
+    vertical-align: baseline;
+    box-shadow: 0 0 12px var(--cyan);
+    animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .msg {
+    color: var(--muted);
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+    margin: 1.5rem auto 2.25rem;
+    max-width: 30ch;
+  }
+  .btn {
+    display: inline-block;
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: #fff;
+    background: var(--violet);
+    border: 2px solid var(--violet);
+    padding: 12px 22px;
+    box-shadow: 4px 4px 0 rgba(139, 109, 255, 0.3);
+    transition: transform 0.1s steps(2);
+  }
+  .btn::before { content: "\25B6  "; }
+  .btn:hover { transform: translate(-2px, -2px); }
+  .btn:active { transform: translate(1px, 1px); }
+  .btn:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    .cursor { animation: none; }
+    .btn { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="vignette"></div>
+  <main class="screen">
+    <p class="eyebrow">game over</p>
+    <h1>404<span class="cursor" aria-hidden="true"></span></h1>
+    <p class="msg">the page you're looking for is in another castle.</p>
+    <a class="btn" href="/">Return to start</a>
+  </main>
+</body>
+</html>
