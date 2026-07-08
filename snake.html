@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0a0612" />
+<title>Snake — Chimoru</title>
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+  :root {
+    --bg: #0a0612;
+    --bg-grid: #140d28;
+    --pink: #ff4dcb;
+    --violet: #8b6dff;
+    --cyan: #2ff3f3;
+    --lime: #a6ff3d;
+    --text: #ece7ff;
+    --muted: #9488c4;
+    --edge: #372a63;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+    color: var(--text);
+    font-family: "Courier New", ui-monospace, "Cascadia Code", monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.25rem;
+    overflow-x: hidden;
+    -webkit-font-smoothing: none;
+  }
+  .crt-overlay {
+    position: fixed; inset: 0; z-index: 50; pointer-events: none;
+    background: repeating-linear-gradient(rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.22) 2px 4px);
+    mix-blend-mode: multiply;
+  }
+  .vignette {
+    position: fixed; inset: 0; z-index: 49; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%);
+  }
+  .cabinet { position: relative; z-index: 1; width: 100%; max-width: 380px; text-align: center; }
+  .eyebrow {
+    color: var(--cyan);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    font-size: 12px;
+    margin: 0 0 0.75rem;
+  }
+  .eyebrow::before { content: "// "; color: var(--pink); }
+  h1 {
+    font-size: clamp(2.4rem, 12vw, 3.2rem);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0 0 1.25rem;
+    color: #fff;
+    text-shadow: 3px 3px 0 var(--pink), 6px 6px 0 rgba(139,109,255,0.6), 0 0 18px rgba(255,77,203,0.4);
+  }
+  .scorebar {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+  .scorebar b { color: var(--cyan); font-weight: bold; }
+  .scorebar .hi b { color: var(--lime); }
+  #game {
+    width: 100%;
+    max-width: 340px;
+    aspect-ratio: 1 / 1;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border: 2px solid var(--edge);
+    box-shadow: 0 0 22px rgba(139,109,255,0.35);
+    image-rendering: pixelated;
+    touch-action: none;
+    cursor: pointer;
+  }
+  .hint {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    line-height: 1.6;
+    margin: 1rem 0 1.5rem;
+  }
+  .back {
+    display: inline-block;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--cyan);
+    background: transparent;
+    border: 2px solid var(--edge);
+    padding: 10px 18px;
+    box-shadow: 4px 4px 0 rgba(47,243,243,0.12);
+    transition: transform 0.1s steps(2), color 0.1s, border-color 0.1s;
+  }
+  .back::before { content: "\25C0  "; }
+  .back:hover { transform: translate(-2px,-2px); color: var(--pink); border-color: var(--pink); }
+  .back:focus-visible, #game:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    .back { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="vignette"></div>
+  <main class="cabinet">
+    <p class="eyebrow">arcade</p>
+    <h1>Snake</h1>
+    <div class="scorebar">
+      <span>score <b id="score">0</b></span>
+      <span class="hi">hi <b id="hi">0</b></span>
+    </div>
+    <canvas id="game" width="340" height="340" tabindex="0" aria-label="Snake game board"></canvas>
+    <p class="hint">arrows / WASD &middot; swipe on mobile &middot; space = start</p>
+    <a class="back" href="/arcade.html">Back to arcade</a>
+  </main>
+
+  <script>
+    (function () {
+      var canvas = document.getElementById("game");
+      var ctx = canvas.getContext("2d");
+      var scoreEl = document.getElementById("score");
+      var hiEl = document.getElementById("hi");
+      var COLS = 17, ROWS = 17, CELL = 20;
+      var snake, dir, nextDir, food, score, stepMs, lastStep, state;
+      var hi = parseInt(localStorage.getItem("chimoru_snake_hi") || "0", 10);
+      var ac;
+
+      function rand(n) { return Math.floor(Math.random() * n); }
+
+      function playBlip() {
+        try {
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          ac = ac || new AC();
+          if (ac.state === "suspended") ac.resume();
+          var t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+          o.type = "square"; o.frequency.value = 880;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(0.12, t + 0.005);
+          g.gain.exponentialRampToValueAtTime(0.0008, t + 0.09);
+          o.connect(g).connect(ac.destination);
+          o.start(t); o.stop(t + 0.1);
+        } catch (e) {}
+      }
+
+      function placeFood() {
+        do { food = { x: rand(COLS), y: rand(ROWS) }; }
+        while (snake.some(function (s) { return s.x === food.x && s.y === food.y; }));
+      }
+
+      function reset() {
+        snake = [{ x: 8, y: 8 }, { x: 7, y: 8 }, { x: 6, y: 8 }];
+        dir = { x: 1, y: 0 };
+        nextDir = { x: 1, y: 0 };
+        score = 0;
+        stepMs = 130;
+        placeFood();
+        state = "ready";
+        updateScore();
+        draw();
+      }
+
+      function updateScore() {
+        scoreEl.textContent = score;
+        hiEl.textContent = hi;
+      }
+
+      function start() {
+        if (state === "playing") return;
+        if (state === "over") reset();
+        state = "playing";
+        lastStep = 0;
+      }
+
+      function setDir(x, y) {
+        if (x === -dir.x && y === -dir.y) return;
+        nextDir = { x: x, y: y };
+      }
+
+      function step() {
+        dir = nextDir;
+        var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+        if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return gameOver();
+        if (snake.some(function (s) { return s.x === head.x && s.y === head.y; })) return gameOver();
+        snake.unshift(head);
+        if (head.x === food.x && head.y === food.y) {
+          score++;
+          updateScore();
+          if (stepMs > 70) stepMs -= 3;
+          placeFood();
+          playBlip();
+        } else {
+          snake.pop();
+        }
+        draw();
+      }
+
+      function gameOver() {
+        state = "over";
+        if (score > hi) {
+          hi = score;
+          try { localStorage.setItem("chimoru_snake_hi", String(hi)); } catch (e) {}
+          updateScore();
+        }
+        draw();
+      }
+
+      function cell(x, y, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x * CELL + 2, y * CELL + 2, CELL - 4, CELL - 4);
+      }
+
+      function overlay(title, sub) {
+        ctx.fillStyle = "rgba(10,6,18,0.74)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 24px 'Courier New', monospace";
+        ctx.fillText(title, canvas.width / 2, canvas.height / 2 - 4);
+        ctx.fillStyle = "#9488c4";
+        ctx.font = "12px 'Courier New', monospace";
+        ctx.fillText(sub, canvas.width / 2, canvas.height / 2 + 20);
+      }
+
+      function draw() {
+        ctx.fillStyle = "#0a0612";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "rgba(55,42,99,0.45)";
+        ctx.lineWidth = 1;
+        for (var i = 1; i < COLS; i++) {
+          ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, canvas.height); ctx.stroke();
+        }
+        for (var j = 1; j < ROWS; j++) {
+          ctx.beginPath(); ctx.moveTo(0, j * CELL); ctx.lineTo(canvas.width, j * CELL); ctx.stroke();
+        }
+        cell(food.x, food.y, "#ff4dcb");
+        for (var k = 0; k < snake.length; k++) {
+          cell(snake[k].x, snake[k].y, k === 0 ? "#2ff3f3" : "#8b6dff");
+        }
+        if (state === "ready") overlay("PRESS START", "arrows / swipe to move");
+        if (state === "over") overlay("GAME OVER", "score " + score + " · press start");
+      }
+
+      function loop(t) {
+        if (state === "playing") {
+          if (!lastStep) lastStep = t;
+          if (t - lastStep >= stepMs) { lastStep = t; step(); }
+        }
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener("keydown", function (e) {
+        var k = e.key;
+        if (k === " " || k === "Enter") { e.preventDefault(); start(); return; }
+        var d = null;
+        if (k === "ArrowUp" || k === "w" || k === "W") d = [0, -1];
+        else if (k === "ArrowDown" || k === "s" || k === "S") d = [0, 1];
+        else if (k === "ArrowLeft" || k === "a" || k === "A") d = [-1, 0];
+        else if (k === "ArrowRight" || k === "d" || k === "D") d = [1, 0];
+        if (d) { e.preventDefault(); if (state !== "playing") start(); setDir(d[0], d[1]); }
+      });
+
+      canvas.addEventListener("click", function () { if (state !== "playing") start(); });
+
+      var touch = null;
+      canvas.addEventListener("touchstart", function (e) {
+        touch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        if (state !== "playing") start();
+      }, { passive: true });
+      canvas.addEventListener("touchmove", function (e) {
+        if (!touch) return;
+        var dx = e.touches[0].clientX - touch.x, dy = e.touches[0].clientY - touch.y;
+        if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
+        if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 1 : -1, 0);
+        else setDir(0, dy > 0 ? 1 : -1);
+        touch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }, { passive: true });
+
+      reset();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

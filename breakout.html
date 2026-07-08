@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0a0612" />
+<title>Breakout — Chimoru</title>
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+  :root {
+    --bg: #0a0612; --bg-grid: #140d28; --pink: #ff4dcb; --violet: #8b6dff;
+    --cyan: #2ff3f3; --lime: #a6ff3d; --text: #ece7ff; --muted: #9488c4; --edge: #372a63;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+    color: var(--text);
+    font-family: "Courier New", ui-monospace, "Cascadia Code", monospace;
+    display: flex; align-items: center; justify-content: center;
+    padding: 2rem 1.25rem; overflow-x: hidden; -webkit-font-smoothing: none;
+  }
+  .crt-overlay { position: fixed; inset: 0; z-index: 50; pointer-events: none; background: repeating-linear-gradient(rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.22) 2px 4px); mix-blend-mode: multiply; }
+  .vignette { position: fixed; inset: 0; z-index: 49; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%); }
+  .cabinet { position: relative; z-index: 1; width: 100%; max-width: 380px; text-align: center; }
+  .eyebrow { color: var(--cyan); letter-spacing: 0.35em; text-transform: uppercase; font-size: 12px; margin: 0 0 0.75rem; }
+  .eyebrow::before { content: "// "; color: var(--pink); }
+  h1 { font-size: clamp(2.2rem, 11vw, 3rem); letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 1.25rem; color: #fff; text-shadow: 3px 3px 0 var(--pink), 6px 6px 0 rgba(139,109,255,0.6), 0 0 18px rgba(255,77,203,0.4); }
+  .scorebar { display: flex; justify-content: space-between; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
+  .scorebar b { color: var(--cyan); font-weight: bold; }
+  .scorebar .hi b { color: var(--lime); }
+  #game { width: 100%; max-width: 340px; aspect-ratio: 340 / 400; height: auto; display: block; margin: 0 auto; border: 2px solid var(--edge); box-shadow: 0 0 22px rgba(139,109,255,0.35); image-rendering: pixelated; touch-action: none; cursor: pointer; }
+  .hint { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; line-height: 1.6; margin: 1rem 0 1.5rem; }
+  .back { display: inline-block; font-family: inherit; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; color: var(--cyan); background: transparent; border: 2px solid var(--edge); padding: 10px 18px; box-shadow: 4px 4px 0 rgba(47,243,243,0.12); transition: transform 0.1s steps(2), color 0.1s, border-color 0.1s; }
+  .back::before { content: "\25C0  "; }
+  .back:hover { transform: translate(-2px,-2px); color: var(--pink); border-color: var(--pink); }
+  .back:focus-visible, #game:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { .back { transition: none; } }
+</style>
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="vignette"></div>
+  <main class="cabinet">
+    <p class="eyebrow">arcade</p>
+    <h1>Breakout</h1>
+    <div class="scorebar">
+      <span>score <b id="score">0</b></span>
+      <span class="hi">hi <b id="hi">0</b></span>
+    </div>
+    <canvas id="game" width="340" height="400" tabindex="0" aria-label="Breakout game board"></canvas>
+    <p class="hint">&larr; &rarr; / WASD or drag &middot; space = launch</p>
+    <a class="back" href="/arcade.html">Back to arcade</a>
+  </main>
+
+  <script>
+    (function () {
+      var canvas = document.getElementById("game");
+      var ctx = canvas.getContext("2d");
+      var scoreEl = document.getElementById("score");
+      var hiEl = document.getElementById("hi");
+      var W = 340, H = 400, SPD = 3.5, PADSPD = 6;
+      var paddle, ball, bricks, score, state, ac;
+      var hi = parseInt(localStorage.getItem("chimoru_breakout_hi") || "0", 10);
+      var leftHeld = false, rightHeld = false;
+      var last = 0, acc = 0, DT = 1000 / 60;
+
+      function playBlip() {
+        try {
+          var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+          ac = ac || new AC(); if (ac.state === "suspended") ac.resume();
+          var t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+          o.type = "square"; o.frequency.value = 760;
+          g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.1, t + 0.004);
+          g.gain.exponentialRampToValueAtTime(0.0008, t + 0.06);
+          o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 0.07);
+        } catch (e) {}
+      }
+
+      function buildBricks() {
+        bricks = [];
+        var cols = 7, rows = 5, side = 12, gap = 5, top = 46, bh = 15;
+        var bw = (W - 2 * side - (cols - 1) * gap) / cols;
+        var colors = ["#ff4dcb", "#8b6dff", "#2ff3f3", "#a6ff3d", "#ffcb45"];
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            bricks.push({ x: side + c * (bw + gap), y: top + r * (bh + gap), w: bw, h: bh, color: colors[r % colors.length], alive: true });
+          }
+        }
+      }
+      function reset() {
+        paddle = { x: (W - 64) / 2, y: H - 26, w: 64, h: 10 };
+        ball = { x: W / 2, y: H - 40, vx: 0, vy: 0, r: 6 };
+        buildBricks();
+        score = 0; state = "ready";
+        updateScore(); draw();
+      }
+      function updateScore() { scoreEl.textContent = score; hiEl.textContent = hi; }
+      function start() {
+        if (state === "playing") return;
+        if (state === "over" || state === "win") reset();
+        state = "playing";
+        ball.vy = -SPD;
+        ball.vx = (Math.random() < 0.5 ? -1 : 1) * SPD * 0.6;
+      }
+      function saveHi() { if (score > hi) { hi = score; try { localStorage.setItem("chimoru_breakout_hi", String(hi)); } catch (e) {} updateScore(); } }
+      function over() { state = "over"; saveHi(); }
+      function win() { state = "win"; saveHi(); }
+
+      function update() {
+        if (leftHeld) paddle.x -= PADSPD;
+        if (rightHeld) paddle.x += PADSPD;
+        paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
+        ball.x += ball.vx; ball.y += ball.vy;
+        if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
+        if (ball.x + ball.r > W) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); }
+        if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); }
+        if (ball.vy > 0 && ball.y + ball.r >= paddle.y && ball.y + ball.r <= paddle.y + paddle.h + 6 &&
+            ball.x >= paddle.x - ball.r && ball.x <= paddle.x + paddle.w + ball.r) {
+          ball.vy = -Math.abs(ball.vy);
+          var hit = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+          ball.vx = hit * SPD * 1.1;
+          ball.y = paddle.y - ball.r;
+          playBlip();
+        }
+        for (var i = 0; i < bricks.length; i++) {
+          var b = bricks[i]; if (!b.alive) continue;
+          if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w && ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
+            b.alive = false; score++; updateScore(); ball.vy = -ball.vy; playBlip(); break;
+          }
+        }
+        if (ball.y - ball.r > H) return over();
+        var anyAlive = false;
+        for (var k = 0; k < bricks.length; k++) { if (bricks[k].alive) { anyAlive = true; break; } }
+        if (!anyAlive) return win();
+      }
+
+      function overlay(title, sub) {
+        ctx.fillStyle = "rgba(10,6,18,0.74)"; ctx.fillRect(0, 0, W, H);
+        ctx.textAlign = "center"; ctx.fillStyle = "#fff"; ctx.font = "bold 22px 'Courier New', monospace";
+        ctx.fillText(title, W / 2, H / 2 - 4);
+        ctx.fillStyle = "#9488c4"; ctx.font = "12px 'Courier New', monospace";
+        ctx.fillText(sub, W / 2, H / 2 + 20);
+      }
+      function draw() {
+        if (state === "ready") { ball.x = paddle.x + paddle.w / 2; ball.y = paddle.y - ball.r - 1; }
+        ctx.fillStyle = "#0a0612"; ctx.fillRect(0, 0, W, H);
+        for (var i = 0; i < bricks.length; i++) {
+          var b = bricks[i]; if (!b.alive) continue;
+          ctx.fillStyle = b.color; ctx.fillRect(b.x, b.y, b.w, b.h);
+        }
+        ctx.fillStyle = "#2ff3f3"; ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+        ctx.fillStyle = "#ece7ff"; ctx.fillRect(ball.x - ball.r, ball.y - ball.r, ball.r * 2, ball.r * 2);
+        if (state === "ready") overlay("PRESS START", "move paddle · space to launch");
+        if (state === "over") overlay("GAME OVER", "score " + score + " · press start");
+        if (state === "win") overlay("YOU WIN!", "score " + score + " · press start");
+      }
+
+      function loop(t) {
+        if (!last) last = t;
+        acc += t - last; last = t;
+        if (acc > 200) acc = 200;
+        while (acc >= DT) { if (state === "playing") update(); acc -= DT; }
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener("keydown", function (e) {
+        var k = e.key;
+        if (k === "ArrowLeft" || k === "a" || k === "A") { leftHeld = true; e.preventDefault(); }
+        else if (k === "ArrowRight" || k === "d" || k === "D") { rightHeld = true; e.preventDefault(); }
+        else if (k === " " || k === "Enter") { e.preventDefault(); start(); }
+      });
+      window.addEventListener("keyup", function (e) {
+        var k = e.key;
+        if (k === "ArrowLeft" || k === "a" || k === "A") leftHeld = false;
+        else if (k === "ArrowRight" || k === "d" || k === "D") rightHeld = false;
+      });
+      function pointerMove(clientX) {
+        var r = canvas.getBoundingClientRect();
+        var sx = canvas.width / r.width;
+        paddle.x = Math.max(0, Math.min(W - paddle.w, (clientX - r.left) * sx - paddle.w / 2));
+      }
+      canvas.addEventListener("mousemove", function (e) { pointerMove(e.clientX); });
+      canvas.addEventListener("mousedown", function () { if (state !== "playing") start(); });
+      canvas.addEventListener("touchstart", function (e) { if (state !== "playing") start(); pointerMove(e.touches[0].clientX); }, { passive: true });
+      canvas.addEventListener("touchmove", function (e) { pointerMove(e.touches[0].clientX); }, { passive: true });
+
+      reset();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

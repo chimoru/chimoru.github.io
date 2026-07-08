@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0a0612" />
+<title>Arcade — Chimoru</title>
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<style>
+  :root {
+    --bg: #0a0612; --bg-grid: #140d28; --pink: #ff4dcb; --violet: #8b6dff;
+    --cyan: #2ff3f3; --lime: #a6ff3d; --text: #ece7ff; --muted: #9488c4; --edge: #372a63;
+    --panel: #17102e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+    color: var(--text);
+    font-family: "Courier New", ui-monospace, "Cascadia Code", monospace;
+    display: flex; align-items: center; justify-content: center;
+    padding: 3rem 1.25rem; overflow-x: hidden; -webkit-font-smoothing: none;
+  }
+  .crt-overlay { position: fixed; inset: 0; z-index: 50; pointer-events: none; background: repeating-linear-gradient(rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.22) 2px 4px); mix-blend-mode: multiply; }
+  .vignette { position: fixed; inset: 0; z-index: 49; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%); }
+  .cabinet { position: relative; z-index: 1; width: 100%; max-width: 460px; text-align: center; }
+  .eyebrow { color: var(--cyan); letter-spacing: 0.35em; text-transform: uppercase; font-size: 12px; margin: 0 0 0.75rem; }
+  .eyebrow::before { content: "// "; color: var(--pink); }
+  h1 { font-size: clamp(2.6rem, 13vw, 3.6rem); letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 0.5rem; color: #fff; text-shadow: 3px 3px 0 var(--pink), 6px 6px 0 rgba(139,109,255,0.6), 0 0 18px rgba(255,77,203,0.4); }
+  .sub { color: var(--muted); font-size: 14px; letter-spacing: 0.05em; margin: 0 0 2rem; }
+  .games { display: flex; flex-direction: column; gap: 14px; margin-bottom: 2rem; }
+  .game-card {
+    display: flex; align-items: center; gap: 16px;
+    text-align: left; text-decoration: none;
+    background: var(--panel); border: 2px solid var(--edge);
+    box-shadow: 6px 6px 0 rgba(139,109,255,0.18);
+    padding: 1rem 1.2rem;
+    transition: transform 0.12s steps(2), box-shadow 0.12s steps(2), border-color 0.12s;
+  }
+  .game-card:hover { transform: translate(-3px,-3px); box-shadow: 9px 9px 0 rgba(47,243,243,0.35); border-color: var(--cyan); }
+  .game-card:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+  .badge { flex: 0 0 auto; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--edge); font-size: 22px; }
+  .game-info { flex: 1 1 auto; min-width: 0; }
+  .game-name { display: block; color: #fff; font-size: 17px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .game-desc { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .play { flex: 0 0 auto; color: var(--lime); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .play::before { content: "\25B6 "; }
+  .back { display: inline-block; font-family: inherit; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; color: var(--cyan); background: transparent; border: 2px solid var(--edge); padding: 10px 18px; box-shadow: 4px 4px 0 rgba(47,243,243,0.12); transition: transform 0.1s steps(2), color 0.1s, border-color 0.1s; }
+  .back::before { content: "\25C0  "; }
+  .back:hover { transform: translate(-2px,-2px); color: var(--pink); border-color: var(--pink); }
+  .back:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { .game-card, .back { transition: none; } }
+</style>
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="vignette"></div>
+  <main class="cabinet">
+    <p class="eyebrow">arcade</p>
+    <h1>Arcade</h1>
+    <p class="sub">Pick a game and chase the high score.</p>
+    <div class="games">
+      <a class="game-card" href="/snake.html">
+        <span class="badge">🐍</span>
+        <span class="game-info">
+          <span class="game-name">Snake</span>
+          <span class="game-desc">grow longer, don't bite yourself</span>
+        </span>
+        <span class="play">Play</span>
+      </a>
+      <a class="game-card" href="/flappy.html">
+        <span class="badge">🐤</span>
+        <span class="game-info">
+          <span class="game-name">Flappy</span>
+          <span class="game-desc">flap through the gaps</span>
+        </span>
+        <span class="play">Play</span>
+      </a>
+      <a class="game-card" href="/breakout.html">
+        <span class="badge">🧱</span>
+        <span class="game-info">
+          <span class="game-name">Breakout</span>
+          <span class="game-desc">bounce the ball, smash the bricks</span>
+        </span>
+        <span class="play">Play</span>
+      </a>
+    </div>
+    <a class="back" href="/">Back to chimoru.dev</a>
+  </main>
+</body>
+</html>
