@@ -123,10 +123,11 @@
   .cursor {
     display: inline-block;
     width: 0.5em;
-    height: 0.58em;
+    height: calc(0.58em + 6px);
     background: var(--cyan);
     margin-left: 0.12em;
     vertical-align: baseline;
+    transform: translateY(6px);
     box-shadow: 0 0 10px var(--cyan);
     animation: blink 1s steps(1) infinite;
   }
