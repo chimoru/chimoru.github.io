@@ -528,13 +528,44 @@
     var hb = document.getElementById("heartBtn");
     if (!hb) return;
     var hi = hb.querySelector(".heart-icon");
+    var audioCtx;
+
+    function playPickup() {
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = audioCtx || new AC();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        var t = audioCtx.currentTime;
+        var notes = [659.25, 783.99, 987.77, 1318.51];
+        for (var i = 0; i < notes.length; i++) {
+          var last = i === notes.length - 1;
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = "triangle";
+          osc.frequency.value = notes[i];
+          var dur = last ? 0.3 : 0.09;
+          gain.gain.setValueAtTime(0.0001, t);
+          gain.gain.linearRampToValueAtTime(0.2, t + 0.008);
+          gain.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+          osc.connect(gain).connect(audioCtx.destination);
+          osc.start(t);
+          osc.stop(t + dur + 0.02);
+          t += last ? dur : 0.075;
+        }
+      } catch (e) {}
+    }
+
+    var animating = false;
     hb.addEventListener("click", function () {
-      hi.classList.remove("pulse");
-      void hi.offsetWidth;
+      if (animating) return;
+      animating = true;
       hi.classList.add("pulse");
-    });
-    hi.addEventListener("animationend", function () {
-      hi.classList.remove("pulse");
+      playPickup();
+      setTimeout(function () {
+        hi.classList.remove("pulse");
+        animating = false;
+      }, 550);
     });
   })();
 </script>
