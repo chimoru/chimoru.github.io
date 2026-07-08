@@ -66,7 +66,7 @@
       var scoreEl = document.getElementById("score");
       var hiEl = document.getElementById("hi");
       var W = 340, H = 400, SPD = 3.5, PADSPD = 6;
-      var paddle, ball, bricks, score, state, ac;
+      var paddle, ball, bricks, score, state, ac, canRestart = true;
       var hi = parseInt(localStorage.getItem("chimoru_breakout_hi") || "0", 10);
       var leftHeld = false, rightHeld = false;
       var last = 0, acc = 0, DT = 1000 / 60;
@@ -104,14 +104,18 @@
       function updateScore() { scoreEl.textContent = score; hiEl.textContent = hi; }
       function start() {
         if (state === "playing") return;
-        if (state === "over" || state === "win") reset();
+        if (state === "over" || state === "win") {
+          if (!canRestart) return;
+          reset();
+        }
         state = "playing";
         ball.vy = -SPD;
         ball.vx = (Math.random() < 0.5 ? -1 : 1) * SPD * 0.6;
       }
       function saveHi() { if (score > hi) { hi = score; try { localStorage.setItem("chimoru_breakout_hi", String(hi)); } catch (e) {} updateScore(); } }
-      function over() { state = "over"; saveHi(); }
-      function win() { state = "win"; saveHi(); }
+      function cooldown() { canRestart = false; setTimeout(function () { canRestart = true; }, 900); }
+      function over() { state = "over"; cooldown(); saveHi(); }
+      function win() { state = "win"; cooldown(); saveHi(); }
 
       function update() {
         if (leftHeld) paddle.x -= PADSPD;
@@ -158,8 +162,8 @@
         ctx.fillStyle = "#2ff3f3"; ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
         ctx.fillStyle = "#ece7ff"; ctx.fillRect(ball.x - ball.r, ball.y - ball.r, ball.r * 2, ball.r * 2);
         if (state === "ready") overlay("PRESS START", "move paddle · space to launch");
-        if (state === "over") overlay("GAME OVER", "score " + score + " · press start");
-        if (state === "win") overlay("YOU WIN!", "score " + score + " · press start");
+        if (state === "over") overlay("GAME OVER", canRestart ? "score " + score + " · press start" : "score " + score);
+        if (state === "win") overlay("YOU WIN!", canRestart ? "score " + score + " · press start" : "score " + score);
       }
 
       function loop(t) {

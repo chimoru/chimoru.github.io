@@ -39,6 +39,8 @@
   }
 
   * { box-sizing: border-box; }
+  ::selection { background: rgba(255, 77, 203, 0.5); color: #fff; }
+  ::-moz-selection { background: rgba(255, 77, 203, 0.5); color: #fff; }
 
   body {
     margin: 0;
@@ -372,6 +374,8 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
     box-shadow: 4px 4px 0 rgba(47, 243, 243, 0.12);
     transition: transform 0.1s steps(2), color 0.1s, border-color 0.1s;
   }
@@ -531,7 +535,7 @@
     <h2 class="section-head">find_me</h2>
     <div class="links">
       <a class="link-btn" href="https://github.com/chimoru" target="_blank" rel="noopener">GitHub</a>
-      <a class="link-btn" href="mailto:chimoru@gmail.com">Email</a>
+      <button class="link-btn" id="copyEmail" type="button" data-email="chimoru@gmail.com">Email</button>
       <button class="link-btn heart-btn" id="heartBtn" type="button" aria-label="Give some love">
         <svg class="heart-icon" viewBox="0 0 7 6" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <rect x="1" y="0" width="2" height="1"/>
@@ -624,6 +628,30 @@
         hi.classList.remove("pulse");
         animating = false;
       }, 550);
+    });
+  })();
+
+  (function () {
+    var btn = document.getElementById("copyEmail");
+    if (!btn) return;
+    var email = btn.getAttribute("data-email");
+    var label = btn.textContent;
+    var t;
+    function feedback() {
+      btn.textContent = "Copied!";
+      clearTimeout(t);
+      t = setTimeout(function () { btn.textContent = label; }, 1500);
+    }
+    btn.addEventListener("click", function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(email).then(feedback, feedback);
+      } else {
+        var ta = document.createElement("textarea");
+        ta.value = email; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        try { document.execCommand("copy"); } catch (e) {}
+        document.body.removeChild(ta); feedback();
+      }
     });
   })();
 </script>

@@ -139,7 +139,7 @@
       var scoreEl = document.getElementById("score");
       var hiEl = document.getElementById("hi");
       var COLS = 17, ROWS = 17, CELL = 20;
-      var snake, dir, nextDir, food, score, stepMs, lastStep, state;
+      var snake, dir, nextDir, food, score, stepMs, lastStep, state, canRestart = true;
       var hi = parseInt(localStorage.getItem("chimoru_snake_hi") || "0", 10);
       var ac;
 
@@ -185,7 +185,10 @@
 
       function start() {
         if (state === "playing") return;
-        if (state === "over") reset();
+        if (state === "over") {
+          if (!canRestart) return;
+          reset();
+        }
         state = "playing";
         lastStep = 0;
       }
@@ -215,6 +218,8 @@
 
       function gameOver() {
         state = "over";
+        canRestart = false;
+        setTimeout(function () { canRestart = true; }, 900);
         if (score > hi) {
           hi = score;
           try { localStorage.setItem("chimoru_snake_hi", String(hi)); } catch (e) {}
@@ -256,7 +261,7 @@
           cell(snake[k].x, snake[k].y, k === 0 ? "#2ff3f3" : "#8b6dff");
         }
         if (state === "ready") overlay("PRESS START", "arrows / swipe to move");
-        if (state === "over") overlay("GAME OVER", "score " + score + " · press start");
+        if (state === "over") overlay("GAME OVER", canRestart ? "score " + score + " · press start" : "score " + score);
       }
 
       function loop(t) {
