@@ -4,6 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="theme-color" content="#0a0612" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <title>Chimoru</title>
 <meta name="description" content="Chimoru's digital workbench — a spot to share apps, web apps, and side projects." />
 <meta property="og:type" content="website" />
@@ -433,7 +435,7 @@
   </div>
 
   <section class="section">
-    <h2 class="section-head">about_me --info</h2>
+    <h2 class="section-head">about_me</h2>
     <div class="about">
       <p class="lead">Hey, I'm Timor.</p>
       <p>IT by profession, curious builder by nature. I started messing around with code using AI as a co-pilot, and got hooked.</p>
@@ -497,9 +499,12 @@
     var el = document.querySelector("#tagline .tt");
     if (!el) return;
     var phrases = [
-      "building apps & web apps",
-      "one creation at a time",
-      "insert coin to continue_"
+      "turning ideas into apps",
+      "press start to build",
+      "loading next project…",
+      "it's not a bug, it's a feature",
+      "the cake is a lie",
+      "have you tried turning it off & on?"
     ];
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) { el.textContent = phrases[0]; return; }
