@@ -381,11 +381,32 @@
     border-color: var(--pink);
   }
   .heart-btn {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     font: inherit;
+  }
+  .oneup {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    color: #a6ff3d;
+    text-shadow: 0 0 6px rgba(166, 255, 61, 0.7), 1px 1px 0 #173404;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 60;
+    animation: oneup-float 0.9s ease-out forwards;
+  }
+  @keyframes oneup-float {
+    0%   { opacity: 0; transform: translate(-50%, -40%) scale(0.6); }
+    20%  { opacity: 1; transform: translate(-50%, -70%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -240%) scale(1); }
   }
   .heart-icon {
     width: 24px;
@@ -586,6 +607,11 @@
       animating = true;
       hi.classList.add("pulse");
       playPickup();
+      var up = document.createElement("span");
+      up.className = "oneup";
+      up.textContent = "1-UP";
+      hb.appendChild(up);
+      setTimeout(function () { up.remove(); }, 950);
       setTimeout(function () {
         hi.classList.remove("pulse");
         animating = false;
