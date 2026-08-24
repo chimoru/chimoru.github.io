@@ -517,9 +517,10 @@
   <p class="tagline" id="tagline"><span class="tt"></span></p>
 
   <div class="chips">
-    <span class="chip">Level 1 · Beginner</span>
+    <span class="chip" id="levelChip" data-level="6">Level 6 · Beginner</span>
     <span class="chip pink">Hobby Developer</span>
     <span class="chip violet nocaps">iOS</span>
+    <span class="chip violet">Webapp</span>
   </div>
     </div>
   </div>
@@ -690,6 +691,20 @@
         document.body.removeChild(ta); feedback();
       }
     });
+  })();
+
+  (function () {
+    var chip = document.getElementById("levelChip");
+    if (!chip) return;
+    var ranks = [
+      "Beginner", "Novice", "Apprentice", "Adept", "Journeyman",
+      "Specialist", "Expert", "Master", "Grandmaster", "Legend"
+    ];
+    var level = parseInt(chip.getAttribute("data-level"), 10);
+    if (isNaN(level)) return;
+    level = Math.max(1, Math.min(100, level));
+    var rank = ranks[Math.min(9, Math.floor(level / 10))];
+    chip.textContent = "Level " + level + " · " + rank;
   })();
 
   (function () {
